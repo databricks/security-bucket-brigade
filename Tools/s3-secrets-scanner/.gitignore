@@ -1,0 +1,17 @@
+# Dependency Directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Yarn Integrity File
+.yarn-integrity
+
+# Apple Nonsense
+.DS_Store
+
+# VS Code Config
+.vscode/
+
+# Local .terraform
+**/.terraform/*

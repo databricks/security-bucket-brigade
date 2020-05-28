@@ -1,0 +1,52 @@
+policies
+- name: mark-untagged-s3
+    resource: s3
+    mode: 
+      type: cloudtrail
+      role: "arn:aws:iam::{account_id}:role/CustodianGuard"
+      events:
+        - CreateBucket
+    filters:
+      - "tag:Owner": absent
+    actions:
+      - type: mark-for-op
+        tag: c7n_s3_untagged
+        op: delete
+        hours: 1
+
+  - name: unmark-untagged-s3
+    resource: s3
+    mode: *hourly-mode
+    region: us-east-2  
+    filters:
+      - "tag:Owner": present
+      - "tag:c7n_s3_untagged": present
+    actions:
+      - type: unmark
+        tags: ["c7n_s3_untagged"]
+
+  - name: untagged-s3-action
+    resource: s3
+    mode: *hourly-mode
+    region: us-east-2  
+    filters:
+      - type: marked-for-op
+        tag: c7n_s3_untagged
+        op: delete
+      - "tag:Owner": absent  
+      - "tag:c7n_s3_email_sent": absent   
+    actions:
+      - type: notify
+        subject: "[AWS Policy] [Account: {{account_id}}] S3 bucket deleted as it has not been Tagged with Owner tag"
+        violation_desc: "S3 bucket deleted"
+        template: jira.html
+        to:
+          - jira-ticket@example.com
+        transport:
+          type: sns
+          topic: "arn:aws:sns:us-east-2:{account-id}:cloud-custodian-mailer-us-east-2-notify"
+      - type: delete
+        remove-contents: false
+      - type: tag
+        key: "c7n_s3_email_sent"
+        value: 'true'  
