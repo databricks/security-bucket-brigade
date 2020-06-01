@@ -1,0 +1,152 @@
+diff --git a/main.go b/main.go
+index 74ea3b5..7f8f76d 100644
+--- a/main.go
++++ b/main.go
+@@ -4,7 +4,8 @@ import (
+ 	"os"
+ 	"os/signal"
+ 
+-	"github.com/Furduhlutur/yar/robber"
++	//"github.com/Furduhlutur/yar/robber"
++	"./robber"
+ )
+ 
+ func main() {
+diff --git a/robber/git.go b/robber/git.go
+index eca574e..3b48314 100644
+--- a/robber/git.go
++++ b/robber/git.go
+@@ -171,7 +171,13 @@ func GetDiffs(m *Middleware, change *object.Change, reponame string) ([]string,
+ 				continue
+ 			}
+ 			diff := strings.Trim(chunk.Content(), " \n")
++			if len(diff) > 32000000 {
++				diff = diff[0:32000000]
++			}
+ 			diffs = append(diffs, diff)
++			if len(diff) > 32000000 {
++				break
++			}
+ 		}
+ 	}
+ 	return diffs, filename, nil
+diff --git a/robber/log.go b/robber/log.go
+index 75b4e20..10fae83 100644
+--- a/robber/log.go
++++ b/robber/log.go
+@@ -135,9 +135,19 @@ func (l *Logger) logSecret(diff string, booty []int, contextNum int) {
+ 	data, _ := logColors[data]
+ 	secret, _ := logColors[secret]
+ 
+-	data.Printf("%s", diff[:booty[0]])
++	d := diff[:booty[0]]
++	if len(d) > 320 {
++		d = d[len(d)-320:]
++	}
++	data.Printf("%s", d)
++
+ 	secret.Printf("%s", diff[booty[0]:booty[1]])
+-	data.Printf("%s\n\n", diff[booty[1]:])
++
++	d = diff[booty[1]:]
++	if len(d) > 320 {
++		d = d[0:320]
++	}
++	data.Printf("%s\n\n", d)
+ }
+ 
+ // LogFinding is used to output Findings
+@@ -150,7 +160,7 @@ func (l *Logger) LogFinding(f *Finding, m *Middleware, contextDiff string) {
+ 	info, _ := logColors[info]
+ 	data, _ := logColors[data]
+ 	secret, _ := logColors[secret]
+-	repoPath, _ := GetDir(f.RepoName)
++	//repoPath, _ := GetDir(f.RepoName)
+ 
+ 	info.Println(seperator)
+ 	info.Printf("Reason: ")
+@@ -159,18 +169,6 @@ func (l *Logger) LogFinding(f *Finding, m *Middleware, contextDiff string) {
+ 		info.Printf("Filepath: ")
+ 		data.Println(f.Filepath)
+ 	}
+-	info.Printf("Repo name: ")
+-	data.Println(f.RepoName)
+-	info.Printf("Committer: ")
+-	data.Printf("%s (%s)\n", f.Committer, f.Email)
+-	info.Printf("Commit hash: ")
+-	data.Println(f.CommitHash)
+-	info.Printf("Date of commit: ")
+-	data.Println(f.DateOfCommit)
+-	info.Printf("View command: ")
+-	data.Printf("git --git-dir=%s show %s:%s\n", repoPath, f.CommitHash[:6], f.Filepath)
+-	info.Printf("Commit message: ")
+-	data.Printf("%s\n\n", strings.Trim(f.CommitMessage, "\n"))
+ 	if *m.Flags.NoContext {
+ 		secret.Printf("%s\n\n", contextDiff[f.Secret[0]:f.Secret[1]])
+ 	} else {
+diff --git a/robber/util.go b/robber/util.go
+index cfa2443..6d96d61 100644
+--- a/robber/util.go
++++ b/robber/util.go
+@@ -25,13 +25,14 @@ var (
+ type jsonFinding []struct {
+ 	Reason        string `json:"Reason"`
+ 	Filepath      string `json:"Filepath"`
+-	RepoName      string `json:"RepoName"`
+-	Commiter      string `json:"Commiter"`
+-	CommitHash    string `json:"CommitHash"`
+-	DateOfCommit  string `json:"DateOfCommit"`
+-	CommitMessage string `json:"CommitMessage"`
+-	Link          string `json:"Link"`
++	RepoName      string `json:"-"`
++	Commiter      string `json:"-"`
++	CommitHash    string `json:"-"`
++	DateOfCommit  string `json:"-"`
++	CommitMessage string `json:"-"`
++	Link          string `json:"-"`
+ 	Secret        string `json:"Secret"`
++	Context       string `json:"Context"`
+ }
+ 
+ // CleanUp deletes all temp directories which were created for cloning of repositories.
+@@ -155,16 +156,34 @@ func PrintEntropyFinding(validStrings []string, m *Middleware, diffObject *DiffO
+ func SaveFindings(findings []*Finding) {
+ 	var savedFindings jsonFinding
+ 	for _, finding := range findings {
++
++		context := ""
++		if len(finding.Diff) > 0 {
++			var (
++				cStart int = finding.Secret[0] - 320
++				cEnd int = finding.Secret[1] + 320
++			)
++			// This is overly-pedantic to ensure we never have
++			// an access issue, as I dunno if upstream will always/
++			// never generate insane values
++			if cStart < 0 { cStart = 0 }
++			if cStart > len(finding.Diff) { cStart = 0 }
++			if cEnd > len(finding.Diff) { cEnd = len(finding.Diff) }
++			if cEnd < cStart { cEnd = cStart }
++			context = finding.Diff[cStart:cEnd]
++		}
++
+ 		savedFindings = append(savedFindings, jsonFinding{{
+ 			Reason:        finding.Reason,
+ 			Filepath:      finding.Filepath,
+-			RepoName:      finding.RepoName,
+-			Commiter:      finding.Committer,
+-			CommitHash:    finding.CommitHash,
+-			DateOfCommit:  finding.DateOfCommit,
+-			CommitMessage: finding.CommitMessage,
+-			Link:          strings.Join([]string{finding.RepoName, "commit", finding.CommitHash}, "/"),
++			//RepoName:      finding.RepoName,
++			//Commiter:      finding.Committer,
++			//CommitHash:    finding.CommitHash,
++			//DateOfCommit:  finding.DateOfCommit,
++			//CommitMessage: finding.CommitMessage,
++			//Link:          strings.Join([]string{finding.RepoName, "commit", finding.CommitHash}, "/"),
+ 			Secret:        finding.Diff[finding.Secret[0]:finding.Secret[1]],
++			Context:       context,
+ 		}}...)
+ 	}
+ 	content, _ := json.MarshalIndent(savedFindings, "", "  ")

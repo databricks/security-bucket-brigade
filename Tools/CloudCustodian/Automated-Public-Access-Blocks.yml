@@ -1,0 +1,22 @@
+policies
+- name: cross-account-s3-create-block
+  resource: s3
+  tags:
+    - security:external-access
+  mode: 
+    type: cloudtrail
+    role: "arn:aws:iam::{account_id}:role/CustodianGuard"
+    events:
+      - event: CreateBucket
+        source: s3.amazonaws.com
+        ids: "requestParameters.bucketName"
+      - event: PutBucketPublicAccessBlock
+        source: s3.amazonaws.com
+        ids: "requestParameters.bucketName"
+  filters:
+    - "tag:public-exception": absent
+  actions:
+    - type: invoke-lambda
+      function: c7n-s3-public-block
+      async: true
+      region: us-east-2
