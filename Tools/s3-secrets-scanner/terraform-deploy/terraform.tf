@@ -8,7 +8,7 @@ variable "profile" {
 variable "region" {
   description = "Name of region to apply changes to"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-1"
 }
 
 variable "buckets" {
@@ -35,11 +35,12 @@ variable "tags" {
 provider "aws" {
   profile = var.profile
   region  = var.region
+  version = "2.63.0"
 }
 
 # SQS Queue
 resource "aws_sqs_queue" "s3_events_queue_deadletter" {
-  name                       = "S3-SecretsScanner-DeadLetters"
+  name_prefix                = "S3-SecretsScanner-DeadLetters"
   delay_seconds              = 0
   visibility_timeout_seconds = 30
   message_retention_seconds  = 1800
@@ -51,7 +52,7 @@ resource "aws_sqs_queue" "s3_events_queue_deadletter" {
 
 # SQS Dead-letter Queue
 resource "aws_sqs_queue" "s3_events_queue" {
-  name                       = "S3-SecretsScanner"
+  name_prefix                = "S3-SecretsScanner"
   delay_seconds              = 0
   visibility_timeout_seconds = 360
   message_retention_seconds  = 345600
@@ -110,7 +111,7 @@ data "aws_iam_policy_document" "iam_for_lambda_policy" {
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name        = "S3-SecretsScanner-LambdaRole"
+  name_prefix = "S3-SecretsScanner-LambdaRole"
   description = "Allows Lambda to access contents of S3 buckets for secrets scanning and notification."
 
   assume_role_policy = data.aws_iam_policy_document.iam_for_lambda_policy.json
@@ -138,16 +139,13 @@ resource "aws_iam_role_policy_attachment" "iam_roles_attach" {
 resource "aws_lambda_function" "s3_secrets_scanner" {
   filename         = var.lambda_filename
   source_code_hash = filebase64sha256(var.lambda_filename)
-  function_name    = "S3-SecretsScanner"
+  function_name    = "S3-SecretsScanner-${random_id.id.hex}"
   description      = "Receives S3 object events and scans the object in question for secrets."
   role             = aws_iam_role.iam_for_lambda.arn
   handler          = "index.handler"
 
   timeout     = 15
   memory_size = 256
-
-  # The filebase64sha256() function is available in Terraform 0.11.12 and later
-  # source_code_hash = "S99++BB+IsSAvSLFOaUqv7KuP9Ib5CSH+b5509rUKhk="
 
   runtime = "nodejs12.x"
 
@@ -164,13 +162,17 @@ resource "aws_lambda_function" "s3_secrets_scanner" {
   tags = var.tags
 }
 
+resource "random_id" "id" {
+  byte_length = 8
+}
+
 resource "aws_lambda_event_source_mapping" "sqs_to_lambda_notification" {
   event_source_arn = aws_sqs_queue.s3_events_queue.arn
   function_name    = aws_lambda_function.s3_secrets_scanner.arn
 }
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
-  name              = "/aws/lambda/S3-SecretsScanner"
+  name_prefix       = "/aws/lambda/S3-SecretsScanner"
   retention_in_days = 14
 
   tags = var.tags

@@ -6,6 +6,7 @@ The following instructions / explanation is for direct use, but can readily be a
 
 - [Terraform](https://www.terraform.io/) - use `terraform init` to configure the required AWS plugins
 - AWS credentials configured with sufficient permission for deployment to required accounts
+- [NodeJs](https://NodeJs.org/) 12+ _(optional - only required for NodeJs Deployment - using `terraform-deploy.js`)_
 
 ## Build
 
@@ -13,11 +14,64 @@ If changes have been made to S3-Secrets-Scanner, it is important to create an ap
 
 Generally a deployment archive is just the `index.js` and `rules.json` files zipped.
 
-To allow the possibility of different versions of the code in different regions, the filename for the archive is maintained in `/configs/<filename>` with the `lambda_filename` variable.
-
-**Important**: When using multiple Terraform config files, update the `lambda_filename` variable in _each_ config file that should use the new code deployment. This permits multiple versions to be deployed simultaneously.
+To allow for the possibility of different versions of the code in different accounts/regions, the filename for the archive is set in `/config.json` with the `lambdaFileName` variable. If provided at both the account and region levels, the region-level will override the account.
 
 ## Deploy
+
+### NodeJs Deployment (Preferred Method)
+
+Deployment via Terraform can be optionally facilitated using NodeJs. This is especially helpful when deploying to multiple AWS accounts or regions. Deployment using NodeJs is _not_ required - proceed to the "Manual Deployment" section below to deploy using Terraform.
+
+Deployment using NodeJs requires a [`config.json`](./config.json), which specifies an array of account objects, each with an array of region objects (see example below).
+
+Once the `config.json` is updated, run the NodeJs deployment as follows:
+
+```bash
+node terraform-deploy.js
+```
+
+The `terraform-deploy.js` script takes an optional `<action>` parameter, which you can use to specify either `apply` or `destroy` actions for `terraform`. For example, to destroy the Terraform-created resources, use:
+
+```bash
+node terraform-deploy.js destroy
+```
+
+#### Example `config.json` (omit comments when deploying):
+
+```json
+[
+  {
+    // One array entry per AWS account
+    "name": "aws-account-name", // Unique name per account, used in the Terraform workspace name
+    "profile": "default", // (optional) AWS profile name to use - default: "default"
+    "enabled": true,
+    "lambdaFileName": "s3-secrets-scanner_1.0.0.zip", // Filename for the lambda (see "Build" above)
+    "regions": [
+      // One array entry per region
+      {
+        "name": "us-east-1", // Name of supported AWS region
+        "buckets": ["example-bucket-one"], // Array of strings for enabled buckets
+        "lambdaFileName": "s3-secrets-scanner_1.0.1.zip", // (optional) Overrides lambdaFileName at account level - allows for different versions to be deployed to different regions
+        "tags": {
+          // (optional) Adds to or overwrites tags as the account level
+          "Creator": "security@company.com"
+        }
+      },
+      {
+        "name": "us-west-2",
+        "buckets": ["example-bucket-two", "example-bucket-three"]
+      }
+    ],
+    "tags": {
+      // (optional) Adds to or overwrites tags as the account level
+      "Owner": "security@company.com",
+      "Creator": "security@company.com"
+    }
+  }
+]
+```
+
+### Manual Deployment
 
 1. Retrieve current Terraform state
 1. Switch to or create the appropriate [Terraform workspace](https://www.terraform.io/docs/state/workspaces.html) for the account/region to be updated
