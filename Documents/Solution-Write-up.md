@@ -76,10 +76,10 @@ For existing buckets, it is important to identify whether any are already public
     FIND UNIQUE aws_s3_bucket
       WITH
         (
-          BlockPublicAcls != true OR
-          IgnorePublicAcls != true OR
-          BlockPublicPolicy != true OR
-          RestrictPublicBuckets != true
+          blockPublicAcls != true OR
+          ignorePublicAcls != true OR
+          blockPublicPolicy != true OR
+          restrictPublicBuckets != true
         )
       AS bucket
       THAT ALLOWS AS grant (everyone|aws_authenticated_users) AS user
@@ -168,10 +168,10 @@ The steps below use [JupiterOne's Alerts](https://jupiterone.com/features/rules-
         WITH
             [tag.public-exception]=undefined AND
             (
-              BlockPublicAcls != true OR
-              IgnorePublicAcls != true OR
-              BlockPublicPolicy != true OR
-              RestrictPublicBuckets != true
+              blockPublicAcls != true OR
+              ignorePublicAcls != true OR
+              blockPublicPolicy != true OR
+              restrictPublicBuckets != true
             ) AS bucket
         THAT ALLOWS AS grant (everyone|aws_authenticated_users) as user
         RETURN
