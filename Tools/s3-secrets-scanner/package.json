@@ -1,0 +1,13 @@
+{
+  "name": "S3-Secrets-Scanner",
+  "version": "1.0.0",
+  "description": "Lambda function to scan objects uploaded/modified in S3 buckets for secrets. Objects are scanned as they are uploaded, in near real-time against a set of secret definitions, driven regular expression pattern matching.",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "aws-sdk": "^2.568.0"
+  },
+  "scripts": {},
+  "author": "Adam Youngberg",
+  "license": "MIT"
+}

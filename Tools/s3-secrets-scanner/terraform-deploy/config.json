@@ -1,0 +1,26 @@
+[
+  {
+    "name": "aws-account-name",
+    "profile": "default",
+    "enabled": true,
+    "lambdaFileName": "s3-secrets-scanner_1.0.0.zip",
+    "regions": [
+      {
+        "name": "us-east-1",
+        "buckets": ["example-bucket-one"],
+        "lambdaFileName": "s3-secrets-scanner_1.0.1.zip",
+        "tags": {
+          "Creator": "security@company.com"
+        }
+      },
+      {
+        "name": "us-west-2",
+        "buckets": ["example-bucket-two", "example-bucket-three"]
+      }
+    ],
+    "tags": {
+      "Owner": "security@company.com",
+      "Creator": "security@company.com"
+    }
+  }
+]

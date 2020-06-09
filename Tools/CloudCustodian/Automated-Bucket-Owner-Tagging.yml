@@ -1,0 +1,21 @@
+policies
+- name: auto-owner-s3
+  resource: s3
+  mode:
+    type: cloudtrail
+    role: arn:aws:iam::{account_id}:role/CustodianGuard
+    tags:
+      App: Custodian
+    events:
+    - event: CreateBucket
+      ids: requestParameters.bucketName
+      source: s3.amazonaws.com
+  filters:
+  - tag:Owner: absent
+  - type: event
+    key: detail.userIdentity.principalId
+    value: '@example.com'
+    op: contains
+  actions:
+  - type: auto-tag-user
+    tag: Owner
