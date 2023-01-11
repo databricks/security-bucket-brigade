@@ -6,8 +6,6 @@ index 74ea3b5..7f8f76d 100644
  	"os"
  	"os/signal"
  
--	"github.com/Furduhlutur/yar/robber"
-+	//"github.com/Furduhlutur/yar/robber"
 +	"./robber"
  )
  

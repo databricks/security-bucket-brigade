@@ -10,7 +10,7 @@ IMPORTANT: AWS Lambda has a limit for the `/tmp` directory size that restricts t
 
 ---
 
-The scanning approach and outputs are inspired by the open-source [YAR tool](https://github.com/Furduhlutur/yar).
+The scanning approach and outputs are inspired by the open-source YAR tool.
 
 Setup: _This Lambda is designed to be triggered by AWS SQS, which has been configured to receive AWS S3 bucket events._
 

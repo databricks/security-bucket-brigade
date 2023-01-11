@@ -49,10 +49,10 @@ Start with the [Solution Write-up](./Documents/Solution-Write-up.md) in the "Doc
 
   Cartography is an open source tool that provides the ability to inventory AWS resources in an easy-to-query graph. This tool is an open-source alternative to JupiterOne.
 
-- [YAR](https://github.com/Furduhlutur/yar): Git Secret Scanner
+- YAR: Git Secret Scanner _(No longer available)_
 
-  YAR is designed to be a Github scanning tool, to scan the complete commit history of a repo for secrets. Our team repurposed it internally to do quick bucket scanning by cloning the bucket and initializing a Git repo at the root. This provided a simple way to use the existing pattern matching to find secrets with only small modifications.
+  YAR was designed to be a Github scanning tool, to scan the complete commit history of a repo for secrets. Our team repurposed it internally to do quick bucket scanning by cloning the bucket and initializing a Git repo at the root. This provided a simple way to use the existing pattern matching to find secrets with only small modifications.
 
 ## License
 
-This repository, all documents and underlying tools are licensed under the [MIT license](./LICENSE.txt), with the exception of the [S3 Scan](./Tools/s3_scan/README.md) tool, which is licensed under [GPL v3 license](./Tools/s3_scan/LICENSE.txt), consistent with the licensing for the [YAR](https://github.com/Furduhlutur/yar) tool it uses.
+This repository, all documents and underlying tools are licensed under the [MIT license](./LICENSE.txt), with the exception of the [S3 Scan](./Tools/s3_scan/README.md) tool, which is licensed under [GPL v3 license](./Tools/s3_scan/LICENSE.txt), consistent with the licensing for the YAR tool it uses.

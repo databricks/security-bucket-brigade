@@ -1,6 +1,6 @@
 # S3 Scan
 
-Quick tool to scan S3 contents using the popular [YAR](https://github.com/Furduhlutur/yar) Github repo scanner.
+Quick tool to scan S3 contents using the popular YAR _(repository no longer available)_ Github repo scanner.
 
 ## Process Summary
 
